@@ -1,3 +1,8 @@
-from django.contrib import admin  # noqa
+"""
+Admin page settings for the application.
+"""
 
-# Register your models here.
+from django.contrib import admin
+from core import models
+
+admin.site.register(models.User)

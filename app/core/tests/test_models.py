@@ -63,3 +63,33 @@ class ModelTests(TestCase):
                 name='Test User',
                 contact_number='123456789'
             )
+
+    def test_create_superuser(self):
+        """Test creating a superuser."""
+        user = get_user_model().objects.create_superuser(
+            name='Test User',
+            email='test@example.com',
+            password='test1234.',
+            contact_number='123456789',
+        )
+        self.assertEqual(user.email, 'test@example.com')
+        self.assertEqual(user.contact_number, '123456789')
+        self.assertEqual(user.name, 'Test User')
+
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
+
+    def test_default_create_user_is_not_super_user(self):
+        """Test creating a normal user does
+        not have superuser priveleges."""
+        email = 'test@example.com'
+        user = get_user_model().objects.create_user(
+            email=email,
+            password='test123.',
+            name='Test User',
+            contact_number='123456789'
+        )
+        self.assertEqual(user.email, email)
+
+        self.assertFalse(user.is_superuser)
+        self.assertFalse(user.is_staff)
