@@ -96,7 +96,7 @@ class PublicUserApiTests(TestCase):
             email=payload['email']).exists())
 
     def test_too_long_contact_number_raises_error(self):
-        """Test that contact number greater than 10 characters
+        """Test that contact number greater than 10 characters \
         raises an error."""
         payload = {
             'email': 'test@example.com',
@@ -120,11 +120,11 @@ class PublicUserApiTests(TestCase):
         }
         res = self.client.post(TOKEN_URL, payload)
 
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn('token', res.data)
 
     def test_create_token_fails_bad_credentials(self):
-        """Test that token is not returned when
+        """Test that token is not returned when \
         user provides bad credentials."""
         userDetails = {
             'email': 'test@example.com',
@@ -142,13 +142,12 @@ class PublicUserApiTests(TestCase):
         self.assertNotIn('token', res.data)
 
     def test_create_token_fails_blank_password(self):
-        """Test that token is not created with a
-        blank password."""
+        """Test that token is not created with a blank password."""
         payload = {
             'email': 'test@example.com',
             'password': '',
         }
-        res = self.client.psot(TOKEN_URL, payload)
+        res = self.client.post(TOKEN_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertNotIn('token', res.data)
