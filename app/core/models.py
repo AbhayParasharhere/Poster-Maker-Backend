@@ -1,6 +1,8 @@
 """
 Model definitions for the application.
 """
+import uuid
+import os
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -8,6 +10,15 @@ from django.contrib.auth.models import (
 )
 from django.db import models
 from django.core.exceptions import ValidationError
+
+
+def background_image_file_path(instance, filename):
+    """Create and return a image path with a unique
+    filename for the new background image."""
+    ext = os.path.splitext(filename)[1]
+    filename = f'{uuid.uuid4()}{ext}'
+
+    return os.path.join('uploads', 'user', 'backgroundImage', filename)
 
 
 class UserManager(BaseUserManager):
@@ -60,6 +71,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     designation = models.CharField(max_length=255, null=True, blank=True)
     employee_id = models.CharField(max_length=12, null=True, blank=True)
+    background_image = models.ImageField(
+        null=True, upload_to=background_image_file_path)
 
     objects = UserManager()
 
