@@ -2,7 +2,10 @@
 Tests for the user api.
 """
 
-from unittest.mock import patch
+from unittest.mock import (
+    patch,
+    PropertyMock
+)
 import os
 import tempfile
 
@@ -20,12 +23,7 @@ from PIL import Image
 CREATE_USER_URL = reverse('user:sign-up')
 TOKEN_URL = reverse('user:token')
 USER_DETAILS_URL = reverse('user:me')
-BACKGROUND_UPLOAD_URL = reverse('user:user-background-upload-image')
-
-
-def background_image_upload_url(user_id):
-    """Return the url for background image upload for a specific user."""
-    return reverse('user:user-background-upload-image', args=[user_id])
+BACKGROUND_URL = reverse('user:background-image')
 
 
 def create_user(**params):
@@ -180,7 +178,7 @@ class PublicUserApiTests(TestCase):
         background image to a user."""
 
         payload = {'background_image': 'not_image'}
-        res = self.client.post(BACKGROUND_UPLOAD_URL,
+        res = self.client.post(BACKGROUND_URL,
                                payload, format='multipart')
 
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -285,7 +283,7 @@ class ImageUploadTests(TestCase):
             img.save(image_file, format='jpeg')
             image_file.seek(0)
             payload = {'background_image': image_file}
-            res = self.client.post(BACKGROUND_UPLOAD_URL,
+            res = self.client.post(BACKGROUND_URL,
                                    payload, format='multipart')
 
         self.user.refresh_from_db()
@@ -297,6 +295,38 @@ class ImageUploadTests(TestCase):
         """Test uploading an invalid image gives bad request."""
         payload = {'background_image': 'notanimage'}
 
-        res = self.client.post(BACKGROUND_UPLOAD_URL,
+        res = self.client.post(BACKGROUND_URL,
                                payload, format='multipart')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('django.contrib.sites.shortcuts.get_current_site')
+    def test_get_background_image(self, mock_site):
+        """Test getting the background image url of the logged in user."""
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as image_file:
+            img = Image.new('RGB', (10, 10))
+            img.save(image_file, format='jpeg')
+            image_file.seek(0)
+            payload = {'background_image': image_file}
+            self.client.post(BACKGROUND_URL,
+                             payload, format='multipart')
+        self.user.refresh_from_db()
+        res = self.client.get(BACKGROUND_URL)
+
+        test_domain = 'testserver'
+        mock_site_value = mock_site.return_value
+        type(mock_site_value).domain = PropertyMock(return_value=test_domain)
+
+        expected_url = f'http://{test_domain}{self.user.background_image.url}'
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, {
+            'background_image': expected_url
+        })
+
+    def test_get_background_image_fails_when_no_image_set(self):
+        """Test that getting background image \
+        returns error when user has not set one"""
+        res = self.client.get(BACKGROUND_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIsNone(res.data)

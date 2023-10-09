@@ -3,6 +3,7 @@ Views for the user API.
 """
 
 from django.utils.translation import gettext as _
+from django.contrib.sites.shortcuts import get_current_site
 
 from rest_framework.authtoken.views import ObtainAuthToken
 
@@ -55,7 +56,7 @@ class GetUpdateUserDetailsView(generics.RetrieveUpdateAPIView):
 
 class UserImageViewSet(viewsets.ModelViewSet):
     """Views for image upload to the user model."""
-    http_method_names = ['post']
+    http_method_names = ['post', 'get']
     serializer_class = UserImageSerializer
 
     authentication_classes = [authentication.TokenAuthentication]
@@ -73,6 +74,24 @@ class UserImageViewSet(viewsets.ModelViewSet):
         else:
             msg = _("Provided background image could not be validated.")
             return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['GET'], detail=True, url_path='get-background-image')
+    def get_background_image(self, request):
+        """Get the background image url for the current user."""
+        user = self.request.user
+        serializer = UserImageSerializer(user)
+
+        if serializer.data['background_image'] is not None:
+            current_site = get_current_site(request)
+            domain = current_site.domain
+            background_image_url = \
+                f"http://{domain}{serializer.data['background_image']}"
+
+            return Response(
+                {'background_image': background_image_url},
+                status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
     def get_object(self):
         return self.request.user
