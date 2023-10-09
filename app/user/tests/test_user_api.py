@@ -3,6 +3,8 @@ Tests for the user api.
 """
 
 from unittest.mock import patch
+import os
+import tempfile
 
 from core import models
 
@@ -13,9 +15,16 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from PIL import Image
+
 CREATE_USER_URL = reverse('user:sign-up')
 TOKEN_URL = reverse('user:token')
 USER_DETAILS_URL = reverse('user:me')
+
+
+def background_image_upload_url(user_id):
+    """Return the url for background image upload for a specific user."""
+    return reverse('user:user-background-upload-image', args=[user_id])
 
 
 def create_user(**params):
@@ -236,3 +245,39 @@ class PrivateUserApiTests(TestCase):
         file_path = models.background_image_file_path(None, 'example.jpg')
 
         self.assertEqual(file_path, f'uploads/user/backgroundImage/{uuid}.jpg')
+
+
+class ImageUploadTests(TestCase):
+    """Tests for the image upload API."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = create_user()
+        self.client.force_authenticate(self.user)
+
+    def tearDown(self):
+        """Clean up after every test to delete image."""
+        self.user.background_image.delete()
+
+    def test_upload_background_image(self):
+        """Test uploading an background image to a user."""
+        url = background_image_upload_url(self.user.id)
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as image_file:
+            img = Image.new('RGB', (10, 10))
+            img.save(image_file, format='jpeg')
+            image_file.seek(0)
+            payload = {'background_image': image_file}
+            res = self.client.post(url, payload, format='multipart')
+
+        self.user.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('background_image', res.data)
+        self.assertTrue(os.path.exists(self.user.background_image.path))
+
+    def test_upload_background_image_bad_request(self):
+        """Test uploading an invalid image gives bad request."""
+        url = background_image_upload_url(self.user.id)
+        payload = {'background_image': 'notanimage'}
+
+        res = self.client.post(url, payload, format='multipart')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
