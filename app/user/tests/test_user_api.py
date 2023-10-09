@@ -20,6 +20,7 @@ from PIL import Image
 CREATE_USER_URL = reverse('user:sign-up')
 TOKEN_URL = reverse('user:token')
 USER_DETAILS_URL = reverse('user:me')
+BACKGROUND_UPLOAD_URL = reverse('user:user-background-upload-image')
 
 
 def background_image_upload_url(user_id):
@@ -167,6 +168,24 @@ class PublicUserApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertNotIn('token', res.data)
 
+    def test_get_user_details_without_token_raises_error(self):
+        """Test that token is required for getting user details."""
+        res = self.client.get(USER_DETAILS_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertNotIn('email', res.data)
+
+    def test_upload_background_image_requires_token(self):
+        """Test that token is requried for uploading \
+        background image to a user."""
+
+        payload = {'background_image': 'not_image'}
+        res = self.client.post(BACKGROUND_UPLOAD_URL,
+                               payload, format='multipart')
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertNotIn('background_image', res.data)
+
 
 class PrivateUserApiTests(TestCase):
     """Tests for authenticated api requests to the user api."""
@@ -261,13 +280,13 @@ class ImageUploadTests(TestCase):
 
     def test_upload_background_image(self):
         """Test uploading an background image to a user."""
-        url = background_image_upload_url(self.user.id)
         with tempfile.NamedTemporaryFile(suffix='.jpg') as image_file:
             img = Image.new('RGB', (10, 10))
             img.save(image_file, format='jpeg')
             image_file.seek(0)
             payload = {'background_image': image_file}
-            res = self.client.post(url, payload, format='multipart')
+            res = self.client.post(BACKGROUND_UPLOAD_URL,
+                                   payload, format='multipart')
 
         self.user.refresh_from_db()
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -276,8 +295,8 @@ class ImageUploadTests(TestCase):
 
     def test_upload_background_image_bad_request(self):
         """Test uploading an invalid image gives bad request."""
-        url = background_image_upload_url(self.user.id)
         payload = {'background_image': 'notanimage'}
 
-        res = self.client.post(url, payload, format='multipart')
+        res = self.client.post(BACKGROUND_UPLOAD_URL,
+                               payload, format='multipart')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)

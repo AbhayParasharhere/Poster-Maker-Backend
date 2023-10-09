@@ -60,8 +60,7 @@ class UserImageSerializer(serializers.ModelSerializer):
     """Serializer for the image upload api."""
     class Meta():
         model = get_user_model()
-        fields = ['id', 'background_image']
-        read_only_fields = ['id']
+        fields = ['background_image']
         extra_kwargs = {'background_image': {'required': 'True'}}
 
 

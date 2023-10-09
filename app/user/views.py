@@ -46,7 +46,7 @@ class GetUpdateUserDetailsView(generics.RetrieveUpdateAPIView):
     serializer_class = UserTextDetailSerializer
 
     authentication_classes = [authentication.TokenAuthentication]
-    permissions_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
         """Retreive and return the authenticated user."""
@@ -59,10 +59,10 @@ class UserImageViewSet(viewsets.ModelViewSet):
     serializer_class = UserImageSerializer
 
     authentication_classes = [authentication.TokenAuthentication]
-    permissions_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     @action(methods=['POST'], detail=True, url_path='upload-background-image')
-    def upload_background_image(self, request, pk=None):
+    def upload_background_image(self, request):
         """Upload a background image to the user."""
         user = self.request.user
         serializer = self.get_serializer(user, data=request.data)

@@ -17,7 +17,7 @@ urlpatterns = [
     path('sign-up/', CreateUserApiView.as_view(), name='sign-up'),
     path('token/', CreateAuthTokenView.as_view(), name='token'),
     path('me/', GetUpdateUserDetailsView.as_view(), name='me'),
-    path('upload-background-image/<int:pk>/',
+    path('upload-background-image/',
          UserImageViewSet.as_view({'post': 'upload_background_image'}),
          name='user-background-upload-image'),
 ]
