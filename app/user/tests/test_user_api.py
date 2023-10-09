@@ -11,6 +11,7 @@ from rest_framework.test import APIClient
 
 CREATE_USER_URL = reverse('user:sign-up')
 TOKEN_URL = reverse('user:token')
+USER_DETAILS_URL = reverse('user:me')
 
 
 def create_user(**params):
@@ -151,3 +152,91 @@ class PublicUserApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertNotIn('token', res.data)
+
+    def test_get_user_details_fails_not_logged_in(self):
+        """Test that getting the detals of the user \
+        without logging in raises error."""
+        res = self.client.get(USER_DETAILS_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertNotIn('email', res.data)
+
+
+class PrivateUserApiTests(TestCase):
+    """Tests for authenticated api requests to the user api."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = create_user()
+        self.client.force_authenticate(self.user)
+
+    def test_get_user_details_success(self):
+        """Test to get user details for the logged in user."""
+        res = self.client.get(USER_DETAILS_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, {
+            'name': self.user.name,
+            'email': self.user.email,
+            'contact_number': self.user.contact_number,
+            'designation': self.user.designation,
+            'employee_id': self.user.employee_id,
+        })
+
+    def test_post_user_details_not_allowed(self):
+        """Test that post request is not allowed \
+        for the user details endpoint."""
+        res = self.client.post(USER_DETAILS_URL, {})
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_partial_update_user_details(self):
+        """Test that the user can update the details \
+        partially"""
+        payload = {
+            'name': 'New Name',
+            'password': 'New Password',
+            'designation': 'New Designation',
+            'employee_id': '5678',
+        }
+
+        res = self.client.patch(USER_DETAILS_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        for attr, value in payload.items():
+            if attr != 'password':
+                self.assertEqual(getattr(self.user, attr), value)
+
+        self.assertTrue(self.user.check_password(payload['password']))
+
+    def test_complete_update_user_details(self):
+        """Test that the user can completely update the details"""
+        payload = {
+            'name': 'New Name',
+            'password': 'New Password',
+            'designation': 'New Designation',
+            'employee_id': '5678',
+            'contact_number': '987654321',
+        }
+
+        res = self.client.put(USER_DETAILS_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        for attr, value in payload.items():
+            if attr != 'password':
+                self.assertEqual(getattr(self.user, attr), value)
+
+        self.assertTrue(self.user.check_password(payload['password']))
+
+    def test_email_update_not_allowed(self):
+        """Test that the user cannot update the email."""
+        payload = {
+            'email': 'newemail@example.com',
+        }
+
+        res = self.client.patch(USER_DETAILS_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotEqual(self.user.email, payload['email'])
