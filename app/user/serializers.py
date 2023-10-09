@@ -25,6 +25,37 @@ class UserSerializer(serializers.ModelSerializer):
         return get_user_model().objects.create_user(**validated_data)
 
 
+class UserTextDetailSerializer(serializers.ModelSerializer):
+    """Serializer for handling requests to get and update \
+    user detals."""
+    class Meta():
+        model = get_user_model()
+        fields = ['name', 'password', 'email',
+                  'designation', 'contact_number', 'employee_id']
+        extra_kwargs = {
+            'password': {'write_only': True,
+                         'min_length': 8},
+            'contact_number': {'max_length': 10}
+        }
+
+    def update(self, instance, validated_data):
+        "Update method returns the validated user instance."
+        password = validated_data.pop('password', None)
+        email = validated_data.pop('email', None)
+        user = super().update(instance, validated_data)
+
+        if email is not None:
+            msg = _('Email cannot be modified or updated for an account.')
+            raise serializers.ValidationError(
+                msg, code='email_update_not_allowed')
+
+        if password:
+            user.set_password(password)
+            user.save()
+
+        return user
+
+
 class AuthTokenSerializer(serializers.Serializer):
     """Serializer for the user auth token."""
 
@@ -51,7 +82,7 @@ class AuthTokenSerializer(serializers.Serializer):
         if not user:
             msg = _('Unable to authenticate the user \
                 with the given credentials')
-            raise serializers.ValidationError(msg)
+            raise serializers.ValidationError(msg, code="authorization")
 
         attrs['user'] = user
         return attrs
