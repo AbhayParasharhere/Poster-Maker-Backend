@@ -64,6 +64,13 @@ class UserImageSerializer(serializers.ModelSerializer):
         extra_kwargs = {'background_image': {'required': 'True'}}
 
 
+class SignatureImageSerializer(UserImageSerializer):
+    """Serializer for the signature image."""
+    class Meta(UserImageSerializer.Meta):
+        fields = ['signature_image']
+        extra_kwargs = {'signature_image': {'required': 'True'}}
+
+
 class AuthTokenSerializer(serializers.Serializer):
     """Serializer for the user auth token."""
 

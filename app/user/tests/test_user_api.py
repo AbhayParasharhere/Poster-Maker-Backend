@@ -24,6 +24,7 @@ CREATE_USER_URL = reverse('user:sign-up')
 TOKEN_URL = reverse('user:token')
 USER_DETAILS_URL = reverse('user:me')
 BACKGROUND_URL = reverse('user:background-image')
+SIGNATURE_URL = reverse('user:signature-image')
 
 
 def create_user(**params):
@@ -264,13 +265,17 @@ class PrivateUserApiTests(TestCase):
         self.assertEqual(file_path, f'uploads/user/backgroundImage/{uuid}.jpg')
 
 
-class ImageUploadTests(TestCase):
-    """Tests for the image upload API."""
+class BaseImageUploadTests(TestCase):
+    """Base class for testing for images."""
 
     def setUp(self):
         self.client = APIClient()
         self.user = create_user()
         self.client.force_authenticate(self.user)
+
+
+class BackgroundImageUploadTests(BaseImageUploadTests):
+    """Tests for the background image."""
 
     def tearDown(self):
         """Clean up after every test to delete image."""
@@ -330,3 +335,34 @@ class ImageUploadTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIsNone(res.data)
+
+
+class SignatureImageUploadTests(BaseImageUploadTests):
+    """Test for the signature image."""
+
+    def tearDown(self):
+        """Clean up after every test to delete image."""
+        self.user.signature_image.delete()
+
+    def test_upload_signature_image(self):
+        """Test uploading an background image to a user."""
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as image_file:
+            img = Image.new('RGB', (10, 10))
+            img.save(image_file, format='jpeg')
+            image_file.seek(0)
+            payload = {'signature_image': image_file}
+            res = self.client.post(SIGNATURE_URL,
+                                   payload, format='multipart')
+
+        self.user.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('signature_image', res.data)
+        self.assertTrue(os.path.exists(self.user.signature_image.path))
+
+    def test_upload_signature_image_bad_request(self):
+        """Test uploading an invalid image gives bad request."""
+        payload = {'signature_image': 'notanimage'}
+
+        res = self.client.post(SIGNATURE_URL,
+                               payload, format='multipart')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)

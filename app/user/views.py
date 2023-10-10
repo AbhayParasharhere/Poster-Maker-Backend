@@ -26,6 +26,7 @@ from user.serializers import (
     UserSerializer,
     UserTextDetailSerializer,
     UserImageSerializer,
+    SignatureImageSerializer,
 )
 
 
@@ -54,13 +55,20 @@ class GetUpdateUserDetailsView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
-class UserImageViewSet(viewsets.ModelViewSet):
-    """Views for image upload to the user model."""
+class BaseImageViewSet(viewsets.ModelViewSet):
+    """Base viewset for the image iews."""
     http_method_names = ['post', 'get']
-    serializer_class = UserImageSerializer
 
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+
+class UserImageViewSet(BaseImageViewSet):
+    """Views for image upload to the user model."""
+    serializer_class = UserImageSerializer
 
     @action(methods=['POST'], detail=True, url_path='upload-background-image')
     def upload_background_image(self, request):
@@ -93,5 +101,20 @@ class UserImageViewSet(viewsets.ModelViewSet):
         else:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-    def get_object(self):
-        return self.request.user
+
+class SignatureImageViewSet(BaseImageViewSet):
+    """Views for the signature image."""
+    serializer_class = SignatureImageSerializer
+
+    @action(methods=['POST'], detail=True, url_path='upload-signature-image')
+    def upload_signature_image(self, request):
+        """Upload a signature image to the user."""
+        user = self.request.user
+        serializer = self.get_serializer(user, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            msg = _("Provided signature image could not be validated.")
+            return Response(msg, status=status.HTTP_400_BAD_REQUEST)

@@ -8,6 +8,7 @@ from user.views import (
     CreateAuthTokenView,
     GetUpdateUserDetailsView,
     UserImageViewSet,
+    SignatureImageViewSet,
 )
 
 
@@ -22,4 +23,9 @@ urlpatterns = [
              {'post': 'upload_background_image',
               'get': 'get_background_image'}),
          name='background-image'),
+    path('signature-image/',
+         SignatureImageViewSet.as_view(
+             {'post': 'upload_signature_image'}
+         ),
+         name='signature-image')
 ]
