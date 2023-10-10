@@ -366,3 +366,37 @@ class SignatureImageUploadTests(BaseImageUploadTests):
         res = self.client.post(SIGNATURE_URL,
                                payload, format='multipart')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('django.contrib.sites.shortcuts.get_current_site')
+    def test_get_signature_image(self, mock_current_site):
+        """Test getting the signature image of the logged in user."""
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as image_file:
+            img = Image.new('RGB', (10, 10))
+            img.save(image_file, format='jpeg')
+            image_file.seek(0)
+            payload = {
+                'signature_image': image_file
+            }
+            self.client.post(SIGNATURE_URL, payload, format='multipart')
+
+        self.user.refresh_from_db()
+        test_domain = 'testserver'
+        mock_current_site_value = mock_current_site.return_value
+        type(mock_current_site_value).domain = PropertyMock(
+            return_value=test_domain)
+
+        res = self.client.get(SIGNATURE_URL)
+        expected_url = f'http://{test_domain}{self.user.signature_image.url}'
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, {
+            'signature_image': expected_url
+        })
+
+    def test_get_signature_image_fails_when_no_image_set(self):
+        """Test that getting the signature image when no image \
+        is set by the user raises error. """
+        res = self.client.get(SIGNATURE_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIsNone(res.data)

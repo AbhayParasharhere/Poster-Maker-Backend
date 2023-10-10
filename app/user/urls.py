@@ -25,7 +25,9 @@ urlpatterns = [
          name='background-image'),
     path('signature-image/',
          SignatureImageViewSet.as_view(
-             {'post': 'upload_signature_image'}
+             {'post': 'upload_signature_image',
+              'get': 'get_signature_image',
+              }
          ),
          name='signature-image')
 ]

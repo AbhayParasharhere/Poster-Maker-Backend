@@ -118,3 +118,21 @@ class SignatureImageViewSet(BaseImageViewSet):
         else:
             msg = _("Provided signature image could not be validated.")
             return Response(msg, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['GET'], detail=True, url_path='get-signature-image')
+    def get_signature_image(self, request):
+        """Get the current signature image of the user."""
+        user = self.request.user
+        serializer = self.serializer_class(user)
+
+        if serializer.data['signature_image'] is not None:
+            current_site = get_current_site(request)
+            domain = current_site.domain
+            response_url = \
+                f'http://{domain}{serializer.data["signature_image"]}'
+            return Response(
+                {'signature_image': response_url},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
