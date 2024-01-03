@@ -3,6 +3,7 @@ server {
 
     location /static {
         alias /vol/static;
+        add_header Access-Control-Allow-Origin *;
     }
 
     location / {

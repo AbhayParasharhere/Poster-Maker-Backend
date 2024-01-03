@@ -23,15 +23,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'changeme')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = bool(int(os.environ.get('DEBUG', 0)))
+DEBUG = bool(int(os.environ.get('DEBUG', 0))) 
+         
+ALLOWED_HOSTS = ['*']
+#ALLOWED_HOSTS.extend(
+#    filter(
+#        None,
+#        os.environ.get('ALLOWED_HOSTS', '').split(','),
+#    )
+#)
 
-ALLOWED_HOSTS = ['127.0.0.1', 'http://localhost:5173']
-ALLOWED_HOSTS.extend(
-    filter(
-        None,
-        os.environ.get('ALLOWED_HOSTS', '').split(','),
-    )
-)
+    
+# settings.py 
+
+# Set the SECURE_SSL_REDIRECT to True to ensure all requests are redirected to HTTPS.
+SECURE_SSL_REDIRECT = False
 
 
 # Application definition
@@ -63,11 +69,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:5175",
-]
+#CORS_ALLOWED_ORIGINS = [
+  #  "*"
+  # ]
+
+
+CORS_ORIGIN_ALLOW_ALL = True
 
 ROOT_URLCONF = 'app.urls'
 
@@ -85,6 +92,7 @@ TEMPLATES = [
             ],
         },
     },
+
 ]
 
 WSGI_APPLICATION = 'app.wsgi.application'
@@ -139,23 +147,26 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
-
+         
 STATIC_URL = '/static/'
-
+         
+        
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
-
+      
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'core.User'
-
+    
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-}
-
+}   
+    
 STATIC_URL = '/static/static/'
 MEDIA_URL = '/static/media/'
 
+#STATIC_ROOT = os.path.join('', 'static')
+#MEDIA_ROOT = os.path.join('', 'media')
 STATIC_ROOT = '/vol/web/static/'
 MEDIA_ROOT = '/vol/web/media/'
 
