@@ -4,7 +4,6 @@
 [![Django](https://img.shields.io/badge/Django-3.2-092E20?logo=django&logoColor=white)](https://djangoproject.com/)
 [![DRF](https://img.shields.io/badge/DRF-3.12-ff1709)](https://www.django-rest-framework.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docker.com/)
-[![CI](https://github.com/AbhayParasharhere/Poster-Maker-Backend/actions/workflows/checks.yml/badge.svg)](https://github.com/AbhayParasharhere/Poster-Maker-Backend/actions/workflows/checks.yml)
 
 > Django REST Framework API powering the Poster Maker platform for Punjab Insurance Canada — handles advisor authentication, user management, and poster data serving behind an nginx reverse proxy.
 
